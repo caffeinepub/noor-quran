@@ -130,7 +130,7 @@ export interface backendInterface {
     getQuranSettings(): Promise<[string, Array<[bigint, boolean]>]>;
     getVisitorCount(): Promise<bigint>;
     incrementVisitorCount(): Promise<void>;
-    loginUser(phone: string): Promise<string>;
+    loginUser(name: string, phone: string): Promise<string>;
     registerUser(name: string, phone: string): Promise<string>;
     setReciterUrl(adminToken: string, url: string): Promise<void>;
     setSurahEnabled(adminToken: string, surahNumber: bigint, enabled: boolean): Promise<void>;
@@ -368,17 +368,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async loginUser(arg0: string): Promise<string> {
+    async loginUser(arg0: string, arg1: string): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.loginUser(arg0);
+                const result = await this.actor.loginUser(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.loginUser(arg0);
+            const result = await this.actor.loginUser(arg0, arg1);
             return result;
         }
     }

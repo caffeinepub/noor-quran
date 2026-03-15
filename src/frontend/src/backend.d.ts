@@ -31,7 +31,7 @@ export interface backendInterface {
     getQuranSettings(): Promise<[string, Array<[bigint, boolean]>]>;
     getVisitorCount(): Promise<bigint>;
     incrementVisitorCount(): Promise<void>;
-    loginUser(phone: string): Promise<string>;
+    loginUser(name: string, phone: string): Promise<string>;
     registerUser(name: string, phone: string): Promise<string>;
     setReciterUrl(adminToken: string, url: string): Promise<void>;
     setSurahEnabled(adminToken: string, surahNumber: bigint, enabled: boolean): Promise<void>;

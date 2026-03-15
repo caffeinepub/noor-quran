@@ -60,7 +60,7 @@ export interface _SERVICE {
   'getQuranSettings' : ActorMethod<[], [string, Array<[bigint, boolean]>]>,
   'getVisitorCount' : ActorMethod<[], bigint>,
   'incrementVisitorCount' : ActorMethod<[], undefined>,
-  'loginUser' : ActorMethod<[string], string>,
+  'loginUser' : ActorMethod<[string, string], string>,
   'registerUser' : ActorMethod<[string, string], string>,
   'setReciterUrl' : ActorMethod<[string, string], undefined>,
   'setSurahEnabled' : ActorMethod<[string, bigint, boolean], undefined>,

@@ -53,17 +53,21 @@ export default function AuthPage() {
   };
 
   const handleLogin = async () => {
-    if (!phone.trim()) {
-      toast.error("Please enter your phone number");
+    if (!name.trim() || !phone.trim()) {
+      toast.error("Please enter your name and phone number");
       return;
     }
     try {
-      const token = await loginUser.mutateAsync({ phone: phone.trim() });
+      const token = await loginUser.mutateAsync({
+        name: name.trim(),
+        phone: phone.trim(),
+      });
       localStorage.setItem("noor_session", token);
+      localStorage.setItem("noor_user_name", name.trim());
       toast.success("Welcome back!");
       navigate({ to: "/quran" });
     } catch {
-      toast.error("Login failed. Phone number not found.");
+      toast.error("Login failed. Name and phone not found.");
     }
   };
 
@@ -98,7 +102,8 @@ export default function AuthPage() {
               Noor Quran
             </p>
             <p className="text-muted-foreground mt-2 text-sm">
-              India's First Multi-Language Word-by-Word Quran
+              India's First Website | Quran Sharif on Multi-Language's with
+              Lafzi Meaning
             </p>
           </motion.div>
 
@@ -138,7 +143,7 @@ export default function AuthPage() {
               <div className="flex rounded-xl overflow-hidden border border-border mb-8">
                 <button
                   type="button"
-                  data-ocid="auth.toggle_button"
+                  data-ocid="auth.toggle"
                   onClick={() => {
                     setMode("register");
                     setName("");
@@ -154,6 +159,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
+                  data-ocid="auth.tab"
                   onClick={() => {
                     setMode("login");
                     setName("");
@@ -250,6 +256,20 @@ export default function AuthPage() {
                       </p>
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="login-name" className="text-foreground">
+                        Full Name
+                      </Label>
+                      <Input
+                        id="login-name"
+                        data-ocid="auth.name_input"
+                        placeholder="Enter your name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                        onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="login-phone" className="text-foreground">
                         Phone Number
                       </Label>
@@ -285,14 +305,6 @@ export default function AuthPage() {
               </AnimatePresence>
             </div>
           </div>
-
-          {/* Admin link */}
-          <p className="text-center mt-4 text-sm text-muted-foreground">
-            Admin?{" "}
-            <a href="/admin" className="text-accent hover:underline">
-              Go to Admin Panel
-            </a>
-          </p>
         </motion.div>
       </main>
 

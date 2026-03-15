@@ -41,16 +41,18 @@ actor {
   };
   var nextDuaId : Nat = 1;
 
-  // User Registration
+  // ------ USER REGISTRATION & AUTH ------
+
+  // Register new user using name and phone number
   public shared ({ caller }) func registerUser(name : Text, phone : Text) : async Text {
-    // Check if phone already exists
+    // Prevent duplicate phone numbers
     for ((_, user) in users.entries()) {
       if (user.phone == phone) {
         Runtime.trap("Phone number already registered");
       };
     };
 
-    let sessionToken = phone; // For simplicity, use phone as session token
+    let sessionToken = phone;
 
     let newUser : User = {
       name;
@@ -62,17 +64,17 @@ actor {
     sessionToken;
   };
 
-  // User Login
-  public query ({ caller }) func loginUser(phone : Text) : async Text {
+  // Login user by verifying BOTH name and phone
+  public query ({ caller }) func loginUser(name : Text, phone : Text) : async Text {
     for ((token, user) in users.entries()) {
-      if (user.phone == phone) {
+      if (user.name == name and user.phone == phone) {
         return token;
       };
     };
-    Runtime.trap("User not found");
+    Runtime.trap("Invalid credentials");
   };
 
-  // Get Current User
+  // Fetch current user based on session token
   public query ({ caller }) func getCurrentUser(sessionToken : Text) : async User {
     switch (users.get(sessionToken)) {
       case (null) { Runtime.trap("Invalid session token") };
@@ -80,25 +82,29 @@ actor {
     };
   };
 
-  // Increment Visitor Count
+  // ------ VISITOR COUNTER ------
+
+  // Increment the visitor count
   public shared ({ caller }) func incrementVisitorCount() : async () {
     visitorCount += 1;
   };
 
-  // Get Visitor Count
+  // Get total number of visitors
   public query ({ caller }) func getVisitorCount() : async Nat {
     visitorCount;
   };
 
-  // Admin Login (hardcoded)
+  // ------ ADMIN FUNCTIONS ------
+
+  // Admin login (hardcoded credentials)
   public query ({ caller }) func adminLogin(username : Text, password : Text) : async Text {
-    if (username == "admin" and password == "admin123") {
+    if (username == "admin" and password == "Magic123") {
       return "adminSessionToken";
     };
     Runtime.trap("Invalid credentials");
   };
 
-  // Get All Users (admin only)
+  // Fetch all users (admin only)
   public query ({ caller }) func getAllUsers(adminToken : Text) : async [User] {
     if (adminToken != "adminSessionToken") {
       Runtime.trap("Unauthorized");
@@ -106,7 +112,7 @@ actor {
     users.values().toArray();
   };
 
-  // Set Reciter URL (admin only)
+  // Set Quran reciter URL (admin only)
   public shared ({ caller }) func setReciterUrl(adminToken : Text, url : Text) : async () {
     if (adminToken != "adminSessionToken") {
       Runtime.trap("Unauthorized");
@@ -117,7 +123,7 @@ actor {
     };
   };
 
-  // Enable/Disable Surah (admin only)
+  // Enable or disable a Surah (admin only)
   public shared ({ caller }) func setSurahEnabled(adminToken : Text, surahNumber : Nat, enabled : Bool) : async () {
     if (adminToken != "adminSessionToken") {
       Runtime.trap("Unauthorized");
@@ -130,13 +136,15 @@ actor {
     };
   };
 
-  // Get Reciter URL and Enabled Surahs
+  // Fetch Quran settings (reciter URL and enabled Surahs)
   public query ({ caller }) func getQuranSettings() : async (Text, [(Nat, Bool)]) {
     let surahArray = appSettings.surahEnabled.toArray();
     (appSettings.reciterUrl, surahArray);
   };
 
-  // Add Dua (admin only)
+  // ------ DUAS MANAGEMENT ------
+
+  // Add new Dua (admin only)
   public shared ({ caller }) func addDua(adminToken : Text, title : Text, text : Text, arabicText : Text) : async Nat {
     if (adminToken != "adminSessionToken") {
       Runtime.trap("Unauthorized");
@@ -152,12 +160,12 @@ actor {
     dua.id;
   };
 
-  // Get All Duas
+  // Get all Duas
   public query ({ caller }) func getAllDuas() : async [Dua] {
     duas.values().toArray();
   };
 
-  // Delete Dua (admin only)
+  // Delete a Dua by ID (admin only)
   public shared ({ caller }) func deleteDua(adminToken : Text, duaId : Nat) : async () {
     if (adminToken != "adminSessionToken") {
       Runtime.trap("Unauthorized");
@@ -168,7 +176,7 @@ actor {
     duas.remove(duaId);
   };
 
-  // Get Dua by ID
+  // Get specific Dua by ID
   public query ({ caller }) func getDuaById(duaId : Nat) : async Dua {
     switch (duas.get(duaId)) {
       case (null) { Runtime.trap("Dua not found") };

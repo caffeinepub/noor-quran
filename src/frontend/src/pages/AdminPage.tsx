@@ -63,6 +63,49 @@ const SURAH_NAMES = [
   "Ta-Ha",
 ];
 
+const DUA_TRANSLATE_LANGS = [
+  { key: "en", label: "English" },
+  { key: "ur", label: "Urdu" },
+  { key: "hi", label: "Hindi" },
+  { key: "bn", label: "Bengali" },
+  { key: "ml", label: "Malayalam" },
+  { key: "ta", label: "Tamil" },
+  { key: "gu", label: "Gujarati" },
+  { key: "mr", label: "Marathi" },
+  { key: "te", label: "Telugu" },
+  { key: "kn", label: "Kannada" },
+  { key: "pa", label: "Punjabi" },
+];
+
+async function translateText(
+  text: string,
+  targetLang: string,
+): Promise<string> {
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    // data[0] is array of [translated, original] pairs
+    return (data[0] as [string, string][]).map((item) => item[0]).join("");
+  } catch {
+    return "";
+  }
+}
+
+async function translateToAllLanguages(arabicText: string): Promise<string> {
+  const results = await Promise.all(
+    DUA_TRANSLATE_LANGS.map(async ({ key }) => {
+      const translated = await translateText(arabicText, key);
+      return [key, translated] as [string, string];
+    }),
+  );
+  const obj: Record<string, string> = {};
+  for (const [key, val] of results) {
+    obj[key] = val;
+  }
+  return JSON.stringify(obj);
+}
+
 function formatDate(ts: bigint): string {
   try {
     const ms = Number(ts / BigInt(1_000_000));
@@ -78,8 +121,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [reciterUrl, setReciterUrl] = useState("");
   const [duaTitle, setDuaTitle] = useState("");
-  const [duaText, setDuaText] = useState("");
   const [duaArabic, setDuaArabic] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const adminLogin = useAdminLogin();
   const { data: users, isLoading: usersLoading } = useGetAllUsers(adminToken);
@@ -132,18 +175,27 @@ export default function AdminPage() {
       toast.error("Title is required");
       return;
     }
+    if (!duaArabic.trim()) {
+      toast.error("Arabic text is required");
+      return;
+    }
     try {
+      setIsTranslating(true);
+      toast.info("Translating to all languages...");
+      const translationsJson = await translateToAllLanguages(duaArabic.trim());
+      setIsTranslating(false);
+
       await addDua.mutateAsync({
         adminToken,
         title: duaTitle.trim(),
-        text: duaText.trim(),
+        text: translationsJson,
         arabicText: duaArabic.trim(),
       });
       setDuaTitle("");
-      setDuaText("");
       setDuaArabic("");
-      toast.success("Dua added successfully");
+      toast.success("Dua added with translations in all 11 languages!");
     } catch {
+      setIsTranslating(false);
       toast.error("Failed to add dua");
     }
   };
@@ -411,7 +463,6 @@ export default function AdminPage() {
           {/* Settings Tab */}
           <TabsContent value="settings">
             <div className="space-y-6">
-              {/* Reciter URL */}
               <div className="bg-card border border-border rounded-2xl p-6">
                 <h3 className="font-bold text-foreground mb-1">
                   Audio Reciter
@@ -445,7 +496,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Surah toggles */}
               <div className="bg-card border border-border rounded-2xl p-6">
                 <h3 className="font-bold text-foreground mb-4">
                   Surah Visibility (first 20)
@@ -491,9 +541,13 @@ export default function AdminPage() {
             <div className="space-y-6">
               {/* Add dua form */}
               <div className="bg-card border border-border rounded-2xl p-6">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <h3 className="font-bold text-foreground mb-1 flex items-center gap-2">
                   <Plus className="w-4 h-4 text-primary" /> Add New Dua
                 </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Paste the Arabic text -- translations into all 11 languages
+                  will be generated automatically.
+                </p>
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-foreground">Title</Label>
@@ -517,29 +571,21 @@ export default function AdminPage() {
                       rows={3}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-foreground">
-                      Translation / Meaning
-                    </Label>
-                    <Textarea
-                      data-ocid="admin.dua_text_input"
-                      value={duaText}
-                      onChange={(e) => setDuaText(e.target.value)}
-                      placeholder="Our Lord, give us good in this world..."
-                      className="bg-input border-border text-foreground"
-                      rows={2}
-                    />
-                  </div>
                   <Button
                     data-ocid="admin.add_dua_button"
                     onClick={handleAddDua}
-                    disabled={addDua.isPending}
+                    disabled={addDua.isPending || isTranslating}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    {addDua.isPending ? (
+                    {isTranslating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                        Adding...
+                        Translating to 11 languages...
+                      </>
+                    ) : addDua.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                        Saving...
                       </>
                     ) : (
                       <>
@@ -587,11 +633,11 @@ export default function AdminPage() {
                                 : dua.arabicText}
                             </p>
                           )}
-                          {dua.text && (
-                            <p className="text-muted-foreground text-sm mt-1 truncate">
-                              {dua.text}
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {dua.text?.startsWith("{")
+                              ? "✓ Translations in 11 languages stored"
+                              : dua.text?.slice(0, 60)}
+                          </p>
                         </div>
                         <Button
                           data-ocid={`admin.delete_button.${i + 1}`}

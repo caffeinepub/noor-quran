@@ -225,27 +225,6 @@ const SPEED_OPTIONS = [
   { value: "2", label: "2x" },
 ];
 
-// Helper: get voices, waiting for them to load if needed
-function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
-  return new Promise((resolve) => {
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      resolve(voices);
-    } else {
-      const handler = () => {
-        window.speechSynthesis.removeEventListener("voiceschanged", handler);
-        resolve(window.speechSynthesis.getVoices());
-      };
-      window.speechSynthesis.addEventListener("voiceschanged", handler);
-      // Fallback after 2 seconds if voiceschanged never fires
-      setTimeout(() => {
-        window.speechSynthesis.removeEventListener("voiceschanged", handler);
-        resolve(window.speechSynthesis.getVoices());
-      }, 2000);
-    }
-  });
-}
-
 export default function QuranPage() {
   const navigate = useNavigate();
   const [surahNum, setSurahNum] = useState(1);
@@ -262,13 +241,10 @@ export default function QuranPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stoppedRef = useRef(false);
   const pausedRef = useRef(false);
-  const activeAyahRef = useRef<number | null>(null);
-  const pausedAtAyahRef = useRef<number>(0);
   const ayahRefs = useRef<(HTMLDivElement | null)[]>([]);
   const transAyahsRef = useRef<Ayah[]>([]);
   const autoPlayNextRef = useRef(false);
   const arabicAyahsRef = useRef<Ayah[]>([]);
-  const playAyahByIndexRef = useRef<(index: number) => void>(() => {});
   const { data: settings } = useGetQuranSettings();
 
   useEffect(() => {
@@ -278,10 +254,6 @@ export default function QuranPage() {
   useEffect(() => {
     arabicAyahsRef.current = arabicAyahs;
   }, [arabicAyahs]);
-
-  useEffect(() => {
-    activeAyahRef.current = activeAyah;
-  }, [activeAyah]);
 
   useEffect(() => {
     const token = localStorage.getItem("noor_session");
@@ -342,25 +314,15 @@ export default function QuranPage() {
   const pausePlayback = useCallback(() => {
     pausedRef.current = true;
     setIsPaused(true);
-    // Stop both audio and speech immediately
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current = null;
-    }
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    setPlayingTranslation(false);
-    // Save current ayah index for resume
-    pausedAtAyahRef.current = activeAyahRef.current ?? 0;
+    if ("speechSynthesis" in window) window.speechSynthesis.pause();
+    if (audioRef.current) audioRef.current.pause();
   }, []);
 
   const resumePlayback = useCallback(() => {
     pausedRef.current = false;
-    stoppedRef.current = false;
     setIsPaused(false);
-    // Restart from the ayah that was active when paused
-    playAyahByIndexRef.current(pausedAtAyahRef.current);
+    if ("speechSynthesis" in window) window.speechSynthesis.resume();
+    if (audioRef.current) audioRef.current.play().catch(() => {});
   }, []);
 
   const speakTranslation = useCallback(
@@ -375,28 +337,14 @@ export default function QuranPage() {
       const langConfig = LANGUAGES.find((l) => l.value === language);
       const ttsLang = langConfig?.ttsLang ?? "en-US";
 
-      if (!("speechSynthesis" in window)) {
-        setPlayingTranslation(false);
-        onDone();
-        return;
-      }
-
-      // Cancel any current speech first
-      window.speechSynthesis.cancel();
-
-      // Wait for voices to load, then speak with a small delay after cancel
-      getVoicesReady().then((voices) => {
-        if (stoppedRef.current) {
-          setPlayingTranslation(false);
-          onDone();
-          return;
-        }
-
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = ttsLang;
         utterance.rate = spd;
 
-        // Pick the best available voice: prefer Google, then male, then any matching lang
+        // Try to find a Google/AI male voice for this language
+        const voices = window.speechSynthesis.getVoices();
         const langPrefix = ttsLang.split("-")[0];
         const googleVoice = voices.find(
           (v) =>
@@ -437,17 +385,11 @@ export default function QuranPage() {
           onDone();
         };
 
-        // Small delay after cancel() is required on Chrome/Android to avoid silence
-        setTimeout(() => {
-          if (stoppedRef.current) {
-            clearTimeout(timeout);
-            setPlayingTranslation(false);
-            onDone();
-            return;
-          }
-          window.speechSynthesis.speak(utterance);
-        }, 200);
-      });
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setPlayingTranslation(false);
+        onDone();
+      }
     },
     [language],
   );
@@ -529,10 +471,6 @@ export default function QuranPage() {
     },
     [settings, speakTranslation, speed, surahNum],
   );
-
-  useEffect(() => {
-    playAyahByIndexRef.current = playAyahByIndex;
-  }, [playAyahByIndex]);
 
   // Watch isPlaying state to trigger playback after auto-advance loads new ayahs
   useEffect(() => {

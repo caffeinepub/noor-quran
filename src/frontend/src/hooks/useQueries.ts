@@ -37,9 +37,9 @@ export function useRegisterUser() {
 export function useLoginUser() {
   const { actor } = useActor();
   return useMutation({
-    mutationFn: async ({ phone }: { phone: string }) => {
+    mutationFn: async ({ name, phone }: { name: string; phone: string }) => {
       if (!actor) throw new Error("Not connected");
-      return actor.loginUser(phone);
+      return actor.loginUser(name, phone);
     },
   });
 }
