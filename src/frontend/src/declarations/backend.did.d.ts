@@ -10,7 +10,61 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface _SERVICE { 'getAppName' : ActorMethod<[], string> }
+export interface Dua {
+  'id' : bigint,
+  'title' : string,
+  'text' : string,
+  'arabicText' : string,
+}
+export type Time = bigint;
+export interface User {
+  'name' : string,
+  'sessionToken' : string,
+  'phone' : string,
+  'registeredAt' : Time,
+}
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
+export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
+  'addDua' : ActorMethod<[string, string, string, string], bigint>,
+  'adminLogin' : ActorMethod<[string, string], string>,
+  'deleteDua' : ActorMethod<[string, bigint], undefined>,
+  'getAllDuas' : ActorMethod<[], Array<Dua>>,
+  'getAllUsers' : ActorMethod<[string], Array<User>>,
+  'getCurrentUser' : ActorMethod<[string], User>,
+  'getDuaById' : ActorMethod<[bigint], Dua>,
+  'getQuranSettings' : ActorMethod<[], [string, Array<[bigint, boolean]>]>,
+  'getVisitorCount' : ActorMethod<[], bigint>,
+  'incrementVisitorCount' : ActorMethod<[], undefined>,
+  'loginUser' : ActorMethod<[string], string>,
+  'registerUser' : ActorMethod<[string, string], string>,
+  'setReciterUrl' : ActorMethod<[string, string], undefined>,
+  'setSurahEnabled' : ActorMethod<[string, bigint, boolean], undefined>,
+}
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
 export declare const idlFactory: IDL.InterfaceFactory;

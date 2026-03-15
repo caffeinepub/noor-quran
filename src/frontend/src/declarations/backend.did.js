@@ -8,14 +8,156 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const Dua = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'text' : IDL.Text,
+  'arabicText' : IDL.Text,
+});
+export const Time = IDL.Int;
+export const User = IDL.Record({
+  'name' : IDL.Text,
+  'sessionToken' : IDL.Text,
+  'phone' : IDL.Text,
+  'registeredAt' : Time,
+});
+
 export const idlService = IDL.Service({
-  'getAppName' : IDL.Func([], [IDL.Text], ['query']),
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
+      ['query'],
+    ),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
+  'addDua' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
+  'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], ['query']),
+  'deleteDua' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'getAllDuas' : IDL.Func([], [IDL.Vec(Dua)], ['query']),
+  'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(User)], ['query']),
+  'getCurrentUser' : IDL.Func([IDL.Text], [User], ['query']),
+  'getDuaById' : IDL.Func([IDL.Nat], [Dua], ['query']),
+  'getQuranSettings' : IDL.Func(
+      [],
+      [IDL.Text, IDL.Vec(IDL.Tuple(IDL.Nat, IDL.Bool))],
+      ['query'],
+    ),
+  'getVisitorCount' : IDL.Func([], [IDL.Nat], ['query']),
+  'incrementVisitorCount' : IDL.Func([], [], []),
+  'loginUser' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
+  'registerUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+  'setReciterUrl' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'setSurahEnabled' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  return IDL.Service({ 'getAppName' : IDL.Func([], [IDL.Text], ['query']) });
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
+  });
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const Dua = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'text' : IDL.Text,
+    'arabicText' : IDL.Text,
+  });
+  const Time = IDL.Int;
+  const User = IDL.Record({
+    'name' : IDL.Text,
+    'sessionToken' : IDL.Text,
+    'phone' : IDL.Text,
+    'registeredAt' : Time,
+  });
+  
+  return IDL.Service({
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
+        ['query'],
+      ),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
+    'addDua' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Nat],
+        [],
+      ),
+    'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], ['query']),
+    'deleteDua' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'getAllDuas' : IDL.Func([], [IDL.Vec(Dua)], ['query']),
+    'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(User)], ['query']),
+    'getCurrentUser' : IDL.Func([IDL.Text], [User], ['query']),
+    'getDuaById' : IDL.Func([IDL.Nat], [Dua], ['query']),
+    'getQuranSettings' : IDL.Func(
+        [],
+        [IDL.Text, IDL.Vec(IDL.Tuple(IDL.Nat, IDL.Bool))],
+        ['query'],
+      ),
+    'getVisitorCount' : IDL.Func([], [IDL.Nat], ['query']),
+    'incrementVisitorCount' : IDL.Func([], [], []),
+    'loginUser' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
+    'registerUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+    'setReciterUrl' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'setSurahEnabled' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [], []),
+  });
 };
 
 export const init = ({ IDL }) => { return []; };
