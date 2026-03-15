@@ -269,6 +269,19 @@ export default function QuranPage() {
   const autoPlayNextRef = useRef(false);
   const arabicAyahsRef = useRef<Ayah[]>([]);
   const playAyahByIndexRef = useRef<(index: number) => void>(() => {});
+
+  // Bug 3 fix: language ref so speakTranslation always uses the latest language
+  const languageRef = useRef(language);
+  useEffect(() => {
+    languageRef.current = language;
+  }, [language]);
+
+  // Bug 4 fix: speed ref so callbacks always use the latest speed
+  const speedRef = useRef(speed);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
   const { data: settings } = useGetQuranSettings();
 
   useEffect(() => {
@@ -363,6 +376,9 @@ export default function QuranPage() {
     playAyahByIndexRef.current(pausedAtAyahRef.current);
   }, []);
 
+  // Bug 3 fix: removed `language` from deps; uses languageRef.current instead
+  // Bug 4 fix: removed `speed` from deps; uses speedRef.current (passed via spd param)
+  // Bug 1 fix: Chrome keepAlive interval to prevent silent 15s cutoff
   const speakTranslation = useCallback(
     (text: string, spd: number, onDone: () => void) => {
       if (stoppedRef.current) {
@@ -372,7 +388,8 @@ export default function QuranPage() {
 
       setPlayingTranslation(true);
 
-      const langConfig = LANGUAGES.find((l) => l.value === language);
+      // Bug 3: use languageRef instead of closed-over language
+      const langConfig = LANGUAGES.find((l) => l.value === languageRef.current);
       const ttsLang = langConfig?.ttsLang ?? "en-US";
 
       if (!("speechSynthesis" in window)) {
@@ -417,21 +434,37 @@ export default function QuranPage() {
         else if (maleVoice) utterance.voice = maleVoice;
         else if (anyVoice) utterance.voice = anyVoice;
 
+        // Bug 1: more generous timeout
         const timeout = setTimeout(
           () => {
+            if (keepAliveInterval) clearInterval(keepAliveInterval);
             window.speechSynthesis.cancel();
             setPlayingTranslation(false);
             onDone();
           },
-          Math.max(text.length * 150, 8000),
+          Math.max(text.length * 200, 15000),
         );
 
+        // Bug 1: Chrome keepAlive — pause/resume every 10s to prevent silent stop
+        let keepAliveInterval: ReturnType<typeof setInterval> | null = null;
+        keepAliveInterval = setInterval(() => {
+          if (
+            window.speechSynthesis.speaking &&
+            !window.speechSynthesis.paused
+          ) {
+            window.speechSynthesis.pause();
+            window.speechSynthesis.resume();
+          }
+        }, 10000);
+
         utterance.onend = () => {
+          if (keepAliveInterval) clearInterval(keepAliveInterval);
           clearTimeout(timeout);
           setPlayingTranslation(false);
           onDone();
         };
         utterance.onerror = () => {
+          if (keepAliveInterval) clearInterval(keepAliveInterval);
           clearTimeout(timeout);
           setPlayingTranslation(false);
           onDone();
@@ -440,6 +473,7 @@ export default function QuranPage() {
         // Small delay after cancel() is required on Chrome/Android to avoid silence
         setTimeout(() => {
           if (stoppedRef.current) {
+            if (keepAliveInterval) clearInterval(keepAliveInterval);
             clearTimeout(timeout);
             setPlayingTranslation(false);
             onDone();
@@ -449,7 +483,8 @@ export default function QuranPage() {
         }, 200);
       });
     },
-    [language],
+    // Bug 3 & 4: removed language and speed from deps — use refs instead
+    [],
   );
 
   // playAyahByIndex uses a ref-based approach so it doesn't close over stale arabicAyahs
@@ -496,17 +531,21 @@ export default function QuranPage() {
         if (stoppedRef.current) return;
         const translationText = transAyahsRef.current[index]?.text;
         if (translationText) {
-          speakTranslation(translationText, speed, () => {
-            if (!stoppedRef.current) playAyahByIndex(index + 1);
+          // Bug 4: pass speedRef.current so we always use the latest speed
+          speakTranslation(translationText, speedRef.current, () => {
+            // Bug 2: use ref to avoid stale closure in recursive chain
+            if (!stoppedRef.current) playAyahByIndexRef.current(index + 1);
           });
         } else {
-          playAyahByIndex(index + 1);
+          // Bug 2: use ref to avoid stale closure
+          playAyahByIndexRef.current(index + 1);
         }
       };
 
       const tryPlay = (url: string, fallback?: string) => {
         const audio = new Audio(url);
-        audio.playbackRate = speed;
+        // Bug 4: use speedRef.current instead of closed-over speed
+        audio.playbackRate = speedRef.current;
         audioRef.current = audio;
         audio.onended = afterArabic;
         audio.onerror = () => {
@@ -527,7 +566,8 @@ export default function QuranPage() {
         `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${ayah.number}.mp3`,
       );
     },
-    [settings, speakTranslation, speed, surahNum],
+    // Bug 4: removed speed from deps — uses speedRef.current
+    [settings, speakTranslation, surahNum],
   );
 
   useEffect(() => {
