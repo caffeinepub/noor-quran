@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Noor Quran palette - forest green + gold */
+    --background: 0.98 0.003 106;
+    --foreground: 0.2 0.02 240;
+
+    --card: 1 0 0;
+    --card-foreground: 0.2 0.02 240;
+
+    --popover: 1 0 0;
+    --popover-foreground: 0.2 0.02 240;
+
+    /* Noor green: #1b5e20 */
+    --primary: 0.35 0.12 145;
+    --primary-foreground: 1 0 0;
+
+    /* Gold: #c5a059 */
+    --accent: 0.72 0.1 75;
+    --accent-foreground: 0.15 0.02 240;
+
+    --secondary: 0.96 0.005 145;
+    --secondary-foreground: 0.35 0.12 145;
+
+    --muted: 0.95 0.005 106;
+    --muted-foreground: 0.5 0.02 240;
+
+    --destructive: 0.55 0.2 27;
+    --destructive-foreground: 1 0 0;
+
+    --border: 0.9 0.005 240;
+    --input: 0.9 0.005 240;
+    --ring: 0.35 0.12 145;
+    --radius: 0.75rem;
+
+    --chart-1: 0.35 0.12 145;
+    --chart-2: 0.72 0.1 75;
+    --chart-3: 0.5 0.15 200;
+    --chart-4: 0.6 0.18 30;
+    --chart-5: 0.45 0.12 280;
+
+    --sidebar: 0.15 0.03 240;
+    --sidebar-foreground: 0.9 0.005 0;
+    --sidebar-primary: 0.35 0.12 145;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.2 0.03 240;
+    --sidebar-accent-foreground: 0.9 0.005 0;
+    --sidebar-border: 0.25 0.03 240;
+    --sidebar-ring: 0.35 0.12 145;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+/* Arabic font */
+.font-arabic {
+  font-family: "Amiri", serif;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
